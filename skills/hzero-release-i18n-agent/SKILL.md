@@ -37,14 +37,13 @@ Use this skill for a configured HZero/JIPaaS frontend package release. The skill
 
 This skill is intended to be discovered from a repository `skills/<skill-name>/` directory. A skill installer copies the skill files, but does not install the bundled Node dependencies.
 
-Before the first release dry-run, set `SKILL_DIR` to the installed skill directory and run setup:
+On the user's first initialization or release request, resolve `SKILL_DIR` from the directory containing this loaded `SKILL.md`. Run setup before any release dry-run:
 
 ```bash
-SKILL_DIR=/path/to/installed/hzero-release-i18n-agent
 node "$SKILL_DIR/scripts/setup.mjs"
 ```
 
-`setup.mjs` is idempotent. It checks for `exceljs` and `jszip`, then runs `npm ci --omit=dev --ignore-scripts` only when the dependencies are absent. Do not make the release script install dependencies implicitly.
+`setup.mjs` is idempotent. It checks for `exceljs` and `jszip`, then runs `npm ci --omit=dev --ignore-scripts` only when the dependencies are absent. Do not make the release script install dependencies implicitly. Do not ask the user to identify `SKILL_DIR`; it is an Agent-internal path.
 
 The script defaults to:
 
@@ -53,13 +52,13 @@ The script defaults to:
 
 Override either location with `--config` or `--output-dir`.
 
-Initialize the complete private config template. It includes the database profile and one placeholder `projects -> packages` mapping:
+When the user asks to initialize this skill, run:
 
 ```bash
 node "$SKILL_DIR/scripts/release-i18n-agent.mjs" --init-config
 ```
 
-Then edit `config.json`: replace the database placeholders, the placeholder project, package directory, multilingual prefixes, and seed workbook mapping. `--init-db-config` is only for creating or updating a database profile after the full config already exists:
+Then obtain the required database and repository mapping values from the user, update the private `config.json`, and report its path without exposing the password. `--init-db-config` is only for creating or updating a database profile after the full config already exists:
 
 ```bash
 node "$SKILL_DIR/scripts/release-i18n-agent.mjs" --init-db-config

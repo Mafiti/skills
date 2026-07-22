@@ -37,27 +37,30 @@ npx skills@latest add Mafiti/skills --skill hzero-release-i18n-agent
 
 The installer places the skill into the selected Agent's skill directory. It installs skill files only; it does not install the bundled Node runtime dependencies.
 
-Before the first release dry-run, run the skill setup script from the installed skill directory:
+## First Use
 
-```bash
-SKILL_DIR=/path/to/installed/hzero-release-i18n-agent
-node "$SKILL_DIR/scripts/setup.mjs"
+Start a new conversation with the installed Agent and say:
+
+```text
+初始化 hzero-release-i18n-agent
 ```
 
-`setup.mjs` is idempotent. It verifies `exceljs` and `jszip`, then runs `npm ci --omit=dev --ignore-scripts` only when they are missing.
+The Agent resolves its own installed skill directory, runs the idempotent runtime setup, creates the private config template, and then asks for the required database and repository mappings. Users do not need to find or set `SKILL_DIR`.
 
-Create a private local config outside the skill repository:
+For manual terminal troubleshooting only, use the installation path printed by `npx skills` as `SKILL_DIR`:
 
 ```bash
+SKILL_DIR=/path/printed/by/installer/hzero-release-i18n-agent
+node "$SKILL_DIR/scripts/setup.mjs"
 node "$SKILL_DIR/scripts/release-i18n-agent.mjs" --init-config
 ```
 
-This generates `${XDG_CONFIG_HOME:-$HOME/.config}/hzero-release-i18n-agent/config.json` with a placeholder database profile and a placeholder `projects -> packages` mapping. Replace all placeholders with local database, frontend repository, package, and seed-data workbook values. The config is intentionally outside Git and must never be committed.
+The private config is generated at `${XDG_CONFIG_HOME:-$HOME/.config}/hzero-release-i18n-agent/config.json`. It contains the database profile and `projects -> packages` mappings, stays outside Git, and must never be committed.
 
 ## Runtime Requirements
 
 - Node.js 18 or later.
-- `node "$SKILL_DIR/scripts/setup.mjs"` completed in the skill directory.
+- Complete the Agent-led first-use initialization, or run the manual setup command above.
 - Local `mysql` command available before database-backed extraction.
 - A completed local configuration with HZero project/package/seed-data mappings.
 
