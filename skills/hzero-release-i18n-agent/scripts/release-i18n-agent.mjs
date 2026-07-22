@@ -16,6 +16,7 @@ const DEFAULT_STATE_HOME = process.env.XDG_STATE_HOME || path.join(os.homedir(),
 const DEFAULT_CONFIG_PATH = path.join(DEFAULT_CONFIG_HOME, SKILL_NAME, 'config.json');
 const DEFAULT_AGENT_HOME = path.join(DEFAULT_STATE_HOME, SKILL_NAME);
 const SCRIPT_PATH_EXAMPLE = '<skill-directory>/scripts/release-i18n-agent.mjs';
+const CONFIG_TEMPLATE_PATH = path.join(SKILL_ROOT, 'references', 'config.example.json');
 const SKILL_REQUIRE = createRequire(path.join(SKILL_ROOT, 'package.json'));
 const DEFAULT_DB_BATCH_SIZE = 300;
 const DEFAULT_PROFILE_NAME = 'default';
@@ -67,7 +68,11 @@ Manual mode:
 
 Default mode is dry-run. No file is changed and no command is executed unless --execute is set.
 
-Initialize the local database config before db-backed multilingual diff:
+Initialize the full local config template:
+  node ${SCRIPT_PATH_EXAMPLE} \\
+    --init-config
+
+Initialize or update only one local database profile:
   node ${SCRIPT_PATH_EXAMPLE} \\
     --init-db-config \\
     --profile default \\
@@ -114,9 +119,10 @@ Command overrides:
   --commit-message <msg>   Commit message.
   --commit-file <path>     Extra file to include in commit. Can be repeated.
 
-DB init options:
-  --init-db-config         Write a local DB config template. Does not connect to the database.
-  --force                  Overwrite an existing DB config when used with --init-db-config.
+Configuration init options:
+  --init-config            Write the complete config template, including projects and packages.
+  --init-db-config         Create or update one DB profile in an existing config.
+  --force                  Overwrite an existing config when used with an init command.
   --db-type <type>         Currently supports mysql.
   --db-host <host>
   --db-port <port>
@@ -246,6 +252,9 @@ function parseArgs(argv) {
         break;
       case '--init-db-config':
         args.initDbConfig = true;
+        break;
+      case '--init-config':
+        args.initConfig = true;
         break;
       case '--force':
         args.force = true;
@@ -763,6 +772,44 @@ function initializeDbConfig(args) {
   return configPath;
 }
 
+function initializeConfig(args) {
+  const configPath = toAbsolutePath(args.configPath || DEFAULT_CONFIG_PATH);
+  if (fs.existsSync(configPath) && !args.force) {
+    throw new Error(`Config already exists: ${configPath}. Add --force to overwrite.`);
+  }
+  assertFixedArchitectureArgs(args);
+
+  const config = readJson(CONFIG_TEMPLATE_PATH);
+  const profileName = args.profile || config.defaultProfile || DEFAULT_PROFILE_NAME;
+  const templateProfile = config.profiles?.[config.defaultProfile] || {};
+  const templateDatabase = templateProfile.database || {};
+  config.defaultProfile = profileName;
+  config.fixedPromptSchema = FIXED_PROMPT_SCHEMA;
+  config.profiles = {
+    ...(config.profiles || {}),
+    [profileName]: {
+      ...templateProfile,
+      database: {
+        ...templateDatabase,
+        type: args.dbType || templateDatabase.type || 'mysql',
+        host: args.dbHost || templateDatabase.host || '<db-host>',
+        port: Number(args.dbPort || templateDatabase.port || 3306),
+        username: args.dbUser || templateDatabase.username || '<db-username>',
+        password: args.dbPassword || templateDatabase.password || '<db-password>',
+        passwordEnv: args.dbPasswordEnv || templateDatabase.passwordEnv || '',
+      },
+      prompt: {
+        ...(templateProfile.prompt || {}),
+        extraWhere: args.dbExtraWhere || templateProfile.prompt?.extraWhere || '',
+      },
+      batchSize: args.dbBatchSize || templateProfile.batchSize || DEFAULT_DB_BATCH_SIZE,
+    },
+  };
+
+  writeJson(configPath, config);
+  return configPath;
+}
+
 function assertDirectory(directoryPath, label) {
   if (!fs.existsSync(directoryPath) || !fs.statSync(directoryPath).isDirectory()) {
     throw new Error(`${label} does not exist or is not a directory: ${directoryPath}`);
@@ -856,7 +903,7 @@ function validateDbConfig(config) {
     .filter(([, value]) => value === undefined || value === null || value === '' || isPlaceholder(value))
     .map(([name]) => name);
   if (missing.length > 0) {
-    throw new Error(`DB config is incomplete: ${missing.join(', ')}. Run --init-db-config with real values or edit the config file.`);
+    throw new Error(`DB config is incomplete: ${missing.join(', ')}. Run --init-config to create the template, then edit the config file.`);
   }
   const hasConfigPassword = database.password !== undefined && database.password !== null && database.password !== '' && !isPlaceholder(database.password);
   const hasPasswordEnv = database.passwordEnv !== undefined && database.passwordEnv !== null && database.passwordEnv !== '' && !isPlaceholder(database.passwordEnv);
@@ -2035,7 +2082,7 @@ function buildPlan(args) {
     ? undefined
     : (fs.existsSync(params.configPath) ? loadDbConfig(params.configPath, params.profile) : undefined);
   if (!params.skipExtract && params.execute && !dbConfig) {
-    throw new Error(`DB config does not exist: ${params.configPath}. Run --init-db-config first.`);
+    throw new Error(`DB config does not exist: ${params.configPath}. Run --init-config first.`);
   }
   const extractOptions = parseExtractOptions(params);
   const templateContext = {
@@ -2256,13 +2303,18 @@ async function main() {
     return;
   }
 
-  if (args.initDbConfig) {
-    const configPath = initializeDbConfig(args);
+  if (args.initConfig || args.initDbConfig) {
+    const configPath = args.initConfig ? initializeConfig(args) : initializeDbConfig(args);
     const initializedConfig = readJson(configPath);
     const profileName = initializedConfig.defaultProfile || DEFAULT_PROFILE_NAME;
-    const summary = { initialized: true, configPath, profile: profileName };
+    const summary = {
+      initialized: true,
+      configPath,
+      profile: profileName,
+      projects: Object.keys(initializedConfig.projects || {}),
+    };
     if (!args.json) {
-      console.log(`DB config initialized: ${configPath}`);
+      console.log(`${args.initConfig ? 'Config template' : 'DB config'} initialized: ${configPath}`);
       console.log('DB password is stored in the local config file. Keep this file private.');
     }
     console.log(JSON.stringify(summary, null, 2));

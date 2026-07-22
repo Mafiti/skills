@@ -53,16 +53,13 @@ The script defaults to:
 
 Override either location with `--config` or `--output-dir`.
 
-Create the private config by copying `references/config.example.json`. Complete database credentials and team-specific repository mappings, then restrict permissions:
+Initialize the complete private config template. It includes the database profile and one placeholder `projects -> packages` mapping:
 
 ```bash
-CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/hzero-release-i18n-agent"
-mkdir -p "$CONFIG_DIR"
-cp "$SKILL_DIR/references/config.example.json" "$CONFIG_DIR/config.json"
-chmod 600 "$CONFIG_DIR/config.json"
+node "$SKILL_DIR/scripts/release-i18n-agent.mjs" --init-config
 ```
 
-Alternatively, initialize a placeholder database profile and then edit the generated config:
+Then edit `config.json`: replace the database placeholders, the placeholder project, package directory, multilingual prefixes, and seed workbook mapping. `--init-db-config` is only for creating or updating a database profile after the full config already exists:
 
 ```bash
 node "$SKILL_DIR/scripts/release-i18n-agent.mjs" --init-db-config
@@ -119,7 +116,7 @@ Use `projects -> packages` for reusable configuration:
 
 When a package key appears in exactly one configured project, `--target package@version` resolves that project automatically. If it appears in multiple projects, require `--project`.
 
-See `references/config.example.json` for the complete portable shape. Keep real local paths and credentials only in the private copied config.
+See `references/config.example.json` for the complete portable shape. Keep real local paths and credentials only in the private generated config.
 
 ## Multilingual Rules
 

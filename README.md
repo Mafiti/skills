@@ -46,16 +46,13 @@ node "$SKILL_DIR/scripts/setup.mjs"
 
 `setup.mjs` is idempotent. It verifies `exceljs` and `jszip`, then runs `npm ci --omit=dev --ignore-scripts` only when they are missing.
 
-Create a private local config outside the skill repository. Copy and complete `references/config.example.json` from the installed skill directory, then restrict permissions:
+Create a private local config outside the skill repository:
 
 ```bash
-CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/hzero-release-i18n-agent"
-mkdir -p "$CONFIG_DIR"
-cp "$SKILL_DIR/references/config.example.json" "$CONFIG_DIR/config.json"
-chmod 600 "$CONFIG_DIR/config.json"
+node "$SKILL_DIR/scripts/release-i18n-agent.mjs" --init-config
 ```
 
-The config contains database credentials and team-specific workspace mappings. It is intentionally ignored by Git and must never be committed.
+This generates `${XDG_CONFIG_HOME:-$HOME/.config}/hzero-release-i18n-agent/config.json` with a placeholder database profile and a placeholder `projects -> packages` mapping. Replace all placeholders with local database, frontend repository, package, and seed-data workbook values. The config is intentionally outside Git and must never be committed.
 
 ## Runtime Requirements
 
