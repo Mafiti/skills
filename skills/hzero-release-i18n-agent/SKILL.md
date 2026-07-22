@@ -33,15 +33,18 @@ Use this skill for a configured HZero/JIPaaS frontend package release. The skill
 - Treat local config as trusted code: repository paths, publish commands, and SQL conditions are executed locally. Do not use an unreviewed config.
 - Do not pass database passwords on the command line. Store `database.password` or `database.passwordEnv` only in the private local config.
 
-## Runtime Setup
+## Installation And Runtime Setup
 
-Set `SKILL_DIR` to the installed skill directory and install its runtime dependencies once:
+This skill is intended to be discovered from a repository `skills/<skill-name>/` directory. A skill installer copies the skill files, but does not install the bundled Node dependencies.
+
+Before the first release dry-run, set `SKILL_DIR` to the installed skill directory and run setup:
 
 ```bash
-SKILL_DIR=/path/to/skills/hzero-release-i18n-agent
-cd "$SKILL_DIR"
-npm install
+SKILL_DIR=/path/to/installed/hzero-release-i18n-agent
+node "$SKILL_DIR/scripts/setup.mjs"
 ```
+
+`setup.mjs` is idempotent. It checks for `exceljs` and `jszip`, then runs `npm ci --omit=dev --ignore-scripts` only when the dependencies are absent. Do not make the release script install dependencies implicitly.
 
 The script defaults to:
 
@@ -143,7 +146,7 @@ Ask only for database host, port, username, password or password environment var
 
 ## Runtime Dependencies
 
-The skill bundle owns `exceljs` and `jszip`; install them with `npm install` in the skill directory. Database extraction additionally requires a local `mysql` command.
+The skill bundle owns `exceljs` and `jszip`; initialize them with `setup.mjs`. Database extraction additionally requires a local `mysql` command.
 
 Before reporting readiness, run:
 

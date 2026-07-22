@@ -1350,8 +1350,9 @@ function loadSkillDependency(dependencyName) {
   try {
     return SKILL_REQUIRE(dependencyName);
   } catch (error) {
+    const setupScript = path.join(SKILL_ROOT, 'scripts', 'setup.mjs');
     throw new Error(
-      `Skill runtime dependency "${dependencyName}" is unavailable. Run "npm install" in ${SKILL_ROOT}. ${error.message}`,
+      `Skill runtime dependency "${dependencyName}" is unavailable. Run "${process.execPath} ${setupScript}" before release execution. ${error.message}`,
     );
   }
 }

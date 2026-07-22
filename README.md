@@ -1,20 +1,23 @@
 # Company Skills
 
-This repository stores reusable Agent Skills for HZero-based product teams. Each skill is directly under `<repository-root>/<skill-name>/`; no application-specific adapter layer is required for the skill core.
+This repository stores reusable Agent Skills for HZero-based product teams. Skills are listed under `skills/<skill-name>/` so standard skill installers can discover them.
 
 ## Structure
 
 ```text
 <repository-root>/
-└── hzero-release-i18n-agent/
-    ├── SKILL.md
-    ├── package.json
-    ├── agents/openai.yaml
-    ├── references/config.example.json
-    └── scripts/release-i18n-agent.mjs
+└── skills/
+    └── hzero-release-i18n-agent/
+        ├── SKILL.md
+        ├── package.json
+        ├── agents/openai.yaml
+        ├── references/config.example.json
+        └── scripts/
+            ├── release-i18n-agent.mjs
+            └── setup.mjs
 ```
 
-`agents/openai.yaml` is optional Codex UI metadata. Other Agent Skills-compatible tools can use `SKILL.md`, the bundled script, and the references directly.
+`agents/openai.yaml` is optional Codex UI metadata. The skill core remains `SKILL.md`, `scripts/`, and `references/`.
 
 ## Available Skills
 
@@ -24,32 +27,40 @@ Release an HZero/JIPaaS frontend package from a chat request, export the databas
 
 The release script is conservative: it defaults to dry-run and requires explicit execution flags for branch switching, pulling, publishing, committing, and pushing.
 
-## Local Setup
+## Install
 
-Install the skill dependencies once:
+Install the release skill with a standard skill installer:
 
 ```bash
-cd /path/to/skills/hzero-release-i18n-agent
-npm install
+npx skills@latest add Mafiti/skills --skill hzero-release-i18n-agent
 ```
 
-Create a private local config outside this repository. Copy and complete [`config.example.json`](hzero-release-i18n-agent/references/config.example.json), then restrict permissions:
+The installer places the skill into the selected Agent's skill directory. It installs skill files only; it does not install the bundled Node runtime dependencies.
+
+Before the first release dry-run, run the skill setup script from the installed skill directory:
 
 ```bash
-mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/hzero-release-i18n-agent"
-cp /path/to/skills/hzero-release-i18n-agent/references/config.example.json \
-  "${XDG_CONFIG_HOME:-$HOME/.config}/hzero-release-i18n-agent/config.json"
-chmod 600 "${XDG_CONFIG_HOME:-$HOME/.config}/hzero-release-i18n-agent/config.json"
+SKILL_DIR=/path/to/installed/hzero-release-i18n-agent
+node "$SKILL_DIR/scripts/setup.mjs"
+```
+
+`setup.mjs` is idempotent. It verifies `exceljs` and `jszip`, then runs `npm ci --omit=dev --ignore-scripts` only when they are missing.
+
+Create a private local config outside the skill repository. Copy and complete `references/config.example.json` from the installed skill directory, then restrict permissions:
+
+```bash
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/hzero-release-i18n-agent"
+mkdir -p "$CONFIG_DIR"
+cp "$SKILL_DIR/references/config.example.json" "$CONFIG_DIR/config.json"
+chmod 600 "$CONFIG_DIR/config.json"
 ```
 
 The config contains database credentials and team-specific workspace mappings. It is intentionally ignored by Git and must never be committed.
 
-Each Agent product has its own skill-discovery setup. Point that product at `hzero-release-i18n-agent/` or install/copy this folder according to its Agent Skills mechanism; the skill workflow itself is not tied to Codex.
-
 ## Runtime Requirements
 
 - Node.js 18 or later.
-- `npm install` completed in the skill directory.
+- `node "$SKILL_DIR/scripts/setup.mjs"` completed in the skill directory.
 - Local `mysql` command available before database-backed extraction.
 - A completed local configuration with HZero project/package/seed-data mappings.
 
