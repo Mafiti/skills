@@ -1,0 +1,4 @@
+interface:
+  display_name: "HZero Release I18n Agent"
+  short_description: "Release package@version with package-scoped i18n origin snapshots and styled seed sync."
+  default_prompt: "Use $hzero-release-i18n-agent to prepare a dry-run release for a configured HZero frontend package@version. Resolve the project, release branch, and local workspace; scan the target package source against its package-scoped origin snapshot; use hzero_platform.hpfm_prompt as the final text source; export the database-backed diff before publishing; update the configured seed workbook without committing it; then, only after explicit confirmation, update the package version, publish, and commit/push the frontend release files."

@@ -1,0 +1,42 @@
+{
+  "defaultProfile": "default",
+  "profiles": {
+    "default": {
+      "database": {
+        "type": "mysql",
+        "host": "<db-host>",
+        "port": 3306,
+        "username": "<db-username>",
+        "password": "<db-password>",
+        "passwordEnv": ""
+      },
+      "prompt": {
+        "extraWhere": ""
+      },
+      "batchSize": 300
+    }
+  },
+  "projects": {
+    "frontend-project": {
+      "repoRoot": "/absolute/path/to/frontend-project",
+      "branchPattern": "v{major}.{minor}.x",
+      "publishCommand": "yarn transpile && npm publish",
+      "seedData": {
+        "repoRoot": "/absolute/path/to/backend-seed-data"
+      },
+      "packages": {
+        "frontend-package": {
+          "packageDir": "packages/frontend-package",
+          "extract": {
+            "reservedKeys": [
+              "promptPrefix"
+            ]
+          },
+          "seedData": {
+            "workbook": "init-data/product/hzero_platform/hzero-prompt.xlsx"
+          }
+        }
+      }
+    }
+  }
+}
