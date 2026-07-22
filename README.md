@@ -45,7 +45,7 @@ Start a new conversation with the installed Agent and say:
 初始化 hzero-release-i18n-agent
 ```
 
-The Agent resolves its own installed skill directory, runs the idempotent runtime setup, creates the private config template, and then asks for the required database and repository mappings. Users do not need to find or set `SKILL_DIR`.
+The Agent resolves its own installed skill directory and runs the idempotent runtime setup. When the private config is absent, it creates the template and asks for the required database and repository mappings. When the config already exists, it reads and preserves it. Users do not need to find or set `SKILL_DIR`.
 
 For manual terminal troubleshooting only, use the installation path printed by `npx skills` as `SKILL_DIR`:
 

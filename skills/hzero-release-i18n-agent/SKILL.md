@@ -52,13 +52,13 @@ The script defaults to:
 
 Override either location with `--config` or `--output-dir`.
 
-When the user asks to initialize this skill, run:
+When the user asks to initialize this skill, first check whether the private config exists. If it does not exist, run:
 
 ```bash
 node "$SKILL_DIR/scripts/release-i18n-agent.mjs" --init-config
 ```
 
-Then obtain the required database and repository mapping values from the user, update the private `config.json`, and report its path without exposing the password. `--init-db-config` is only for creating or updating a database profile after the full config already exists:
+Then obtain the required database and repository mapping values from the user, update the private `config.json`, and report its path without exposing the password. If the config already exists, read and preserve its current project mappings; do not run `--init-config --force` unless the user explicitly asks to reset it. `--init-db-config` is only for creating or updating a database profile after the full config already exists:
 
 ```bash
 node "$SKILL_DIR/scripts/release-i18n-agent.mjs" --init-db-config
